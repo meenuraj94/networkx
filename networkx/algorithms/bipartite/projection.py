@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2017-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors: Aric Hagberg <aric.hagberg@gmail.com>
-#          Jordi Torrents <jtorrents@milnou.net>
 """One-mode (unipartite) projections of bipartite graphs."""
 import networkx as nx
 from networkx.utils import not_implemented_for
@@ -144,8 +134,8 @@ def weighted_projected_graph(B, nodes, ratio=False):
 
     ratio: Bool (default=False)
         If True, edge weight is the ratio between actual shared neighbors
-        and possible shared neighbors. If False, edges weight is the number
-        of shared neighbors.
+        and maximum possible shared neighbors (i.e., the size of the other
+        node set). If False, edges weight is the number of shared neighbors.
 
     Returns
     -------
@@ -255,7 +245,7 @@ def collaboration_weighted_projected_graph(B, nodes):
     >>> G = bipartite.collaboration_weighted_projected_graph(B, [0, 2, 4, 5])
     >>> list(G)
     [0, 2, 4, 5]
-    >>> for edge in G.edges(data=True): print(edge)
+    >>> for edge in sorted(G.edges(data=True)): print(edge)
     ...
     (0, 2, {'weight': 0.5})
     (0, 5, {'weight': 0.5})
@@ -454,7 +444,7 @@ def generic_weighted_projected_graph(B, nodes, weight_function=None):
     >>> # Add some arbitrary weight to the edges
     >>> for i,(u,v) in enumerate(B.edges()):
     ...     B.edges[u, v]['weight'] = i + 1
-    ... 
+    ...
     >>> for edge in B.edges(data=True):
     ...     print(edge)
     ...

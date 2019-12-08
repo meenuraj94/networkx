@@ -1,9 +1,3 @@
-#    Copyright (C) 2006-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 import networkx as nx
 
 __all__ = ['convert_node_labels_to_integers', 'relabel_nodes']
@@ -151,7 +145,7 @@ def _relabel_inplace(G, mapping):
 
 
 def _relabel_copy(G, mapping):
-    H = G.fresh_copy()
+    H = G.__class__()
     H.add_nodes_from(mapping.get(n, n) for n in G)
     H._node.update((mapping.get(n, n), d.copy()) for n, d in G.nodes.items())
     if G.is_multigraph():
@@ -166,7 +160,7 @@ def _relabel_copy(G, mapping):
 
 def convert_node_labels_to_integers(G, first_label=0, ordering="default",
                                     label_attribute=None):
-    """Return a copy of the graph G with the nodes relabeled using
+    """Returns a copy of the graph G with the nodes relabeled using
     consecutive integers.
 
     Parameters

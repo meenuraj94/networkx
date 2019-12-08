@@ -1,23 +1,9 @@
-# modularity_max.py - functions for finding communities based on modularity
-#
-# Copyright 2018 Edward L. Platt
-#
-# This file is part of NetworkX
-#
-# NetworkX is distributed under a BSD license; see LICENSE.txt for more
-# information.
-#
-# Authors:
-#   Edward L. Platt <ed@elplatt.com>
-#
 # TODO:
 #   - Alter equations for weighted case
 #   - Write tests for weighted case
 """Functions for detecting communities based on modularity.
 """
-from __future__ import division
 
-import networkx as nx
 from networkx.algorithms.community.quality import modularity
 
 from networkx.utils.mapped_queue import MappedQueue
@@ -52,7 +38,7 @@ def greedy_modularity_communities(G, weight=None):
     >>> sorted(c[0])
     [8, 14, 15, 18, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
 
-     References
+    References
     ----------
     .. [1] M. E. J Newman 'Networks: An Introduction', page 224
        Oxford University Press 2011.
@@ -123,7 +109,7 @@ def greedy_modularity_communities(G, weight=None):
         if len(dq_heap[i]) > 0:
             H.push(dq_heap[i].h[0])
         # If this element was also at the root of row j, we need to remove the
-        # dupliate entry from H
+        # duplicate entry from H
         if dq_heap[j].h[0] == (-dq, j, i):
             H.remove((-dq, j, i))
             # Remove best merge from row j heap
@@ -263,7 +249,7 @@ def _naive_greedy_modularity_communities(G):
                         to_merge and
                         min(i, j) < min(to_merge[0], to_merge[1])
                     ):
-                        # Break ties by chosing pair with lowest min id
+                        # Break ties by choosing pair with lowest min id
                         new_modularity = trial_modularity
                         to_merge = (i, j, new_modularity - old_modularity)
                 # Un-merge

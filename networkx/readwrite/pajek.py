@@ -1,11 +1,3 @@
-#    Copyright (C) 2008-2014 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors: Aric Hagberg (hagberg@lanl.gov)
 """
 *****
 Pajek
@@ -22,8 +14,10 @@ for format information.
 
 """
 
+import warnings
+
 import networkx as nx
-from networkx.utils import is_string_like, open_file, make_str
+from networkx.utils import open_file
 
 __all__ = ['read_pajek', 'parse_pajek', 'generate_pajek', 'write_pajek']
 
@@ -55,16 +49,24 @@ def generate_pajek(G):
     # make dictionary mapping nodes to integers
     nodenumber = dict(zip(nodes, range(1, len(nodes) + 1)))
     for n in nodes:
-        na = G.nodes.get(n, {})
-        x = na.get('x', 0.0)
-        y = na.get('y', 0.0)
-        id = int(na.get('id', nodenumber[n]))
+        # copy node attributes and pop mandatory attributes
+        # to avoid duplication.
+        na = G.nodes.get(n, {}).copy()
+        x = na.pop('x', 0.0)
+        y = na.pop('y', 0.0)
+        id = int(na.pop('id', nodenumber[n]))
         nodenumber[n] = id
-        shape = na.get('shape', 'ellipse')
+        shape = na.pop('shape', 'ellipse')
         s = ' '.join(map(make_qstr, (id, n, x, y, shape)))
+        # only optional attributes are left in na.
         for k, v in na.items():
-            if v.strip() != '':
+            if isinstance(v, str) and v.strip() != '':
                 s += ' %s %s' % (make_qstr(k), make_qstr(v))
+            else:
+                warnings.warn('Node attribute %s is not processed. %s.' %
+                              (k,
+                               'Empty attribute' if isinstance(v, str) else
+                               'Non-string attribute'))
         yield s
 
     # write edges with attributes
@@ -77,8 +79,13 @@ def generate_pajek(G):
         value = d.pop('weight', 1.0)  # use 1 as default edge value
         s = ' '.join(map(make_qstr, (nodenumber[u], nodenumber[v], value)))
         for k, v in d.items():
-            if v.strip() != '':
+            if isinstance(v, str) and v.strip() != '':
                 s += ' %s %s' % (make_qstr(k), make_qstr(v))
+            else:
+                warnings.warn('Edge attribute %s is not processed. %s.' %
+                              (k,
+                               'Empty attribute' if isinstance(v, str) else
+                               'Non-string attribute'))
         yield s
 
 
@@ -96,8 +103,14 @@ def write_pajek(G, path, encoding='UTF-8'):
 
     Examples
     --------
-    >>> G=nx.path_graph(4)
+    >>> G = nx.path_graph(4)
     >>> nx.write_pajek(G, "test.net")
+
+    Warnings
+    --------
+    Optional node attributes and edge attributes must be non-empty strings.
+    Otherwise it will not be written into the file. You will need to
+    convert those attributes to strings if you want to keep them.
 
     References
     ----------
@@ -125,13 +138,13 @@ def read_pajek(path, encoding='UTF-8'):
 
     Examples
     --------
-    >>> G=nx.path_graph(4)
+    >>> G = nx.path_graph(4)
     >>> nx.write_pajek(G, "test.net")
-    >>> G=nx.read_pajek("test.net")
+    >>> G = nx.read_pajek("test.net")
 
     To create a Graph instead of a MultiGraph use
 
-    >>> G1=nx.Graph(G)
+    >>> G1 = nx.Graph(G)
 
     References
     ----------
@@ -161,7 +174,7 @@ def parse_pajek(lines):
     """
     import shlex
     # multigraph=False
-    if is_string_like(lines):
+    if isinstance(lines, str):
         lines = iter(lines.split('\n'))
     lines = iter([line.rstrip('\n') for line in lines])
     G = nx.MultiDiGraph()  # are multiedges allowed in Pajek? assume yes
@@ -186,7 +199,7 @@ def parse_pajek(lines):
                 l = next(lines)
                 try:
                     splitline = [x.decode('utf-8') for x in
-                                 shlex.split(make_str(l).encode('utf-8'))]
+                                 shlex.split(str(l).encode('utf-8'))]
                 except AttributeError:
                     splitline = shlex.split(str(l))
                 id, label = splitline[0:2]
@@ -213,7 +226,7 @@ def parse_pajek(lines):
             for l in lines:
                 try:
                     splitline = [x.decode('utf-8') for x in
-                                 shlex.split(make_str(l).encode('utf-8'))]
+                                 shlex.split(str(l).encode('utf-8'))]
                 except AttributeError:
                     splitline = shlex.split(str(l))
 
@@ -249,17 +262,11 @@ def parse_pajek(lines):
 
 
 def make_qstr(t):
-    """Return the string representation of t.
+    """Returns the string representation of t.
     Add outer double-quotes if the string has a space.
     """
-    if not is_string_like(t):
+    if not isinstance(t, str):
         t = str(t)
     if " " in t:
         t = r'"%s"' % t
     return t
-
-
-# fixture for nose tests
-def teardown_module(module):
-    import os
-    os.unlink('test.net')

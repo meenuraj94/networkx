@@ -1,13 +1,3 @@
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors: Aric Hagberg (hagberg@lanl.gov),
-#          Pieter Swart (swart@lanl.gov),
-#          Dan Schult(dschult@colgate.edu)
 """
 View Classes provide node, edge and degree "views" of a graph.
 
@@ -92,8 +82,7 @@ EdgeDataView
 
     The argument `nbunch` restricts edges to those incident to nodes in nbunch.
 """
-from collections import Mapping, Set, Iterable
-import networkx as nx
+from collections.abc import Mapping, Set
 
 __all__ = ['NodeView', 'NodeDataView',
            'EdgeView', 'OutEdgeView', 'InEdgeView',
@@ -641,12 +630,12 @@ class OutEdgeDataView(object):
 
     def __init__(self, viewer, nbunch=None, data=False, default=None):
         self._viewer = viewer
-        self._adjdict = viewer._adjdict
+        adjdict = self._adjdict = viewer._adjdict
         if nbunch is None:
-            self._nodes_nbrs = self._adjdict.items
+            self._nodes_nbrs = adjdict.items
         else:
             nbunch = list(viewer._graph.nbunch_iter(nbunch))
-            self._nodes_nbrs = lambda: [(n, self._adjdict[n]) for n in nbunch]
+            self._nodes_nbrs = lambda: [(n, adjdict[n]) for n in nbunch]
         self._nbunch = nbunch
         self._data = data
         self._default = default
@@ -769,13 +758,13 @@ class OutMultiEdgeDataView(OutEdgeDataView):
     def __init__(self, viewer, nbunch=None,
                  data=False, keys=False, default=None):
         self._viewer = viewer
-        self._adjdict = viewer._adjdict
+        adjdict = self._adjdict = viewer._adjdict
         self.keys = keys
         if nbunch is None:
-            self._nodes_nbrs = self._adjdict.items
+            self._nodes_nbrs = adjdict.items
         else:
             nbunch = list(viewer._graph.nbunch_iter(nbunch))
-            self._nodes_nbrs = lambda: [(n, self._adjdict[n]) for n in nbunch]
+            self._nodes_nbrs = lambda: [(n, adjdict[n]) for n in nbunch]
         self._nbunch = nbunch
         self._data = data
         self._default = default
@@ -1001,7 +990,7 @@ class EdgeView(OutEdgeView):
     >>> assert((0, 1) in EVnbunch)   #  nbunch is ignored in __contains__
     >>> for u, v in EVnbunch: assert(u == 2 or v == 2)
 
-    >>> MG = nx.path_graph(4, create_using=nx.MultiGraph())
+    >>> MG = nx.path_graph(4, create_using=nx.MultiGraph)
     >>> EVmulti = MG.edges(keys=True)
     >>> (2, 3, 0) in EVmulti
     True
@@ -1019,12 +1008,13 @@ class EdgeView(OutEdgeView):
     dataview = EdgeDataView
 
     def __len__(self):
-        return sum(len(nbrs) + (n in nbrs) for n, nbrs in self._nodes_nbrs()) // 2
+        num_nbrs = (len(nbrs) + (n in nbrs) for n, nbrs in self._nodes_nbrs())
+        return sum(num_nbrs) // 2
 
     def __iter__(self):
         seen = {}
         for n, nbrs in self._nodes_nbrs():
-            for nbr in nbrs:
+            for nbr in list(nbrs):
                 if nbr not in seen:
                     yield (n, nbr)
             seen[n] = 1

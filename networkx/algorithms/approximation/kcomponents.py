@@ -1,22 +1,15 @@
 """ Fast approximation for k-component structure
 """
-#    Copyright (C) 2015 by
-#    Jordi Torrents <jtorrents@milnou.net>
-#    All rights reserved.
-#    BSD license.
 import itertools
-from collections import defaultdict, Mapping
+from collections import defaultdict
+from collections.abc import Mapping
 
 import networkx as nx
 from networkx.exception import NetworkXError
 from networkx.utils import not_implemented_for
 
 from networkx.algorithms.approximation import local_node_connectivity
-from networkx.algorithms.connectivity import \
-    local_node_connectivity as exact_local_node_connectivity
 
-
-__author__ = """\n""".join(['Jordi Torrents <jtorrents@milnou.net>'])
 
 __all__ = ['k_components']
 
@@ -180,7 +173,7 @@ def _cliques_heuristic(G, H, k, min_density):
         sh_cnumber = nx.core_number(SH)
         SG = nx.k_core(G.subgraph(SH), k)
         while not (_same(sh_cnumber) and nx.density(SH) >= min_density):
-            #!! This subgraph must be writable => .copy()
+            # This subgraph must be writable => .copy()
             SH = H.subgraph(SG).copy()
             if len(SH) <= k:
                 break
@@ -221,7 +214,7 @@ class _AntiGraph(nx.Graph):
     edge_attr_dict_factory = single_edge_dict
 
     def __getitem__(self, n):
-        """Return a dict of neighbors of node n in the dense graph.
+        """Returns a dict of neighbors of node n in the dense graph.
 
         Parameters
         ----------
@@ -239,7 +232,7 @@ class _AntiGraph(nx.Graph):
                 set(self._adj) - set(self._adj[n]) - set([n])}
 
     def neighbors(self, n):
-        """Return an iterator over all neighbors of node n in the
+        """Returns an iterator over all neighbors of node n in the
            dense graph.
         """
         try:
@@ -318,7 +311,7 @@ class _AntiGraph(nx.Graph):
 
     @property
     def degree(self):
-        """Return an iterator for (node, degree) and degree for single node.
+        """Returns an iterator for (node, degree) and degree for single node.
 
         The node degree is the number of edges adjacent to the node.
 
@@ -356,7 +349,7 @@ class _AntiGraph(nx.Graph):
         return self.AntiDegreeView(self)
 
     def adjacency(self):
-        """Return an iterator of (node, adjacency set) tuples for all nodes
+        """Returns an iterator of (node, adjacency set) tuples for all nodes
            in the dense graph.
 
         This is the fastest way to look at every edge.

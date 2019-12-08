@@ -8,45 +8,20 @@ Examples
 --------
 Create a graph with a single edge from a dictionary of dictionaries
 
->>> d={0: {1: 1}} # dict-of-dicts single edge (0,1)
->>> G=nx.Graph(d)
+>>> d = {0: {1: 1}}  # dict-of-dicts single edge (0,1)
+>>> G = nx.Graph(d)
 
 See Also
 --------
 nx_agraph, nx_pydot
 """
-#    Copyright (C) 2006-2013 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 import warnings
 import networkx as nx
-__author__ = """\n""".join(['Aric Hagberg <aric.hagberg@gmail.com>',
-                            'Pieter Swart (swart@lanl.gov)',
-                            'Dan Schult(dschult@colgate.edu)'])
+
 __all__ = ['to_networkx_graph',
            'from_dict_of_dicts', 'to_dict_of_dicts',
            'from_dict_of_lists', 'to_dict_of_lists',
            'from_edgelist', 'to_edgelist']
-
-
-def _prep_create_using(create_using):
-    """Return a graph object ready to be populated.
-
-    If create_using is None return the default (just networkx.Graph())
-    If create_using.clear() works, assume it returns a graph object.
-    Otherwise raise an exception because create_using is not a networkx graph.
-
-    """
-    if create_using is None:
-        return nx.Graph()
-    try:
-        create_using.clear()
-    except:
-        raise TypeError("Input graph is not a networkx graph type")
-    return create_using
 
 
 def to_networkx_graph(data, create_using=None, multigraph_input=False):
@@ -66,7 +41,7 @@ def to_networkx_graph(data, create_using=None, multigraph_input=False):
     ----------
     data : object to be converted
 
-       Current known types are:
+        Current known types are:
          any NetworkX graph
          dict-of-dicts
          dict-of-lists
@@ -77,14 +52,14 @@ def to_networkx_graph(data, create_using=None, multigraph_input=False):
          scipy sparse matrix
          pygraphviz agraph
 
-    create_using : NetworkX graph
-       Use specified graph for result.  Otherwise a new graph is created.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+        Graph type to create. If graph instance, then cleared before populated.
 
     multigraph_input : bool (default False)
-      If True and  data is a dict_of_dicts,
-      try to create a multigraph assuming dict_of_dict_of_lists.
-      If data and create_using are both multigraphs then create
-      a multigraph from a multigraph.
+        If True and  data is a dict_of_dicts,
+        try to create a multigraph assuming dict_of_dict_of_lists.
+        If data and create_using are both multigraphs then create
+        a multigraph from a multigraph.
 
     """
     # NX graph
@@ -96,7 +71,11 @@ def to_networkx_graph(data, create_using=None, multigraph_input=False):
             if hasattr(data, 'graph'):  # data.graph should be dict-like
                 result.graph.update(data.graph)
             if hasattr(data, 'nodes'):  # data.nodes should be dict-like
-                result._node.update((n, dd.copy()) for n, dd in data.nodes.items())
+                # result.add_node_from(data.nodes.items()) possible but
+                # for custom node_attr_dict_factory which may be hashable
+                # will be unexpected behavior
+                for n, dd in data.nodes.items():
+                    result._node[n].update(dd)
             return result
         except:
             raise nx.NetworkXError("Input is not a correct NetworkX graph.")
@@ -179,7 +158,7 @@ def to_networkx_graph(data, create_using=None, multigraph_input=False):
 
 
 def to_dict_of_lists(G, nodelist=None):
-    """Return adjacency representation of graph as a dictionary of lists.
+    """Returns adjacency representation of graph as a dictionary of lists.
 
     Parameters
     ----------
@@ -204,15 +183,15 @@ def to_dict_of_lists(G, nodelist=None):
 
 
 def from_dict_of_lists(d, create_using=None):
-    """Return a graph from a dictionary of lists.
+    """Returns a graph from a dictionary of lists.
 
     Parameters
     ----------
     d : dictionary of lists
       A dictionary of lists adjacency representation.
 
-    create_using : NetworkX graph
-       Use specified graph for result.  Otherwise a new graph is created.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+        Graph type to create. If graph instance, then cleared before populated.
 
     Examples
     --------
@@ -224,7 +203,7 @@ def from_dict_of_lists(d, create_using=None):
     >>> G = nx.Graph(dol) # use Graph constructor
 
     """
-    G = _prep_create_using(create_using)
+    G = nx.empty_graph(0, create_using)
     G.add_nodes_from(d)
     if G.is_multigraph() and not G.is_directed():
         # a dict_of_lists can't show multiedges.  BUT for undirected graphs,
@@ -243,7 +222,7 @@ def from_dict_of_lists(d, create_using=None):
 
 
 def to_dict_of_dicts(G, nodelist=None, edge_data=None):
-    """Return adjacency representation of graph as a dictionary of dictionaries.
+    """Returns adjacency representation of graph as a dictionary of dictionaries.
 
     Parameters
     ----------
@@ -283,15 +262,15 @@ def to_dict_of_dicts(G, nodelist=None, edge_data=None):
 
 
 def from_dict_of_dicts(d, create_using=None, multigraph_input=False):
-    """Return a graph from a dictionary of dictionaries.
+    """Returns a graph from a dictionary of dictionaries.
 
     Parameters
     ----------
     d : dictionary of dictionaries
       A dictionary of dictionaries adjacency representation.
 
-    create_using : NetworkX graph
-       Use specified graph for result.  Otherwise a new graph is created.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+        Graph type to create. If graph instance, then cleared before populated.
 
     multigraph_input : bool (default False)
        When True, the values of the inner dict are assumed
@@ -308,7 +287,7 @@ def from_dict_of_dicts(d, create_using=None, multigraph_input=False):
     >>> G = nx.Graph(dod) # use Graph constructor
 
     """
-    G = _prep_create_using(create_using)
+    G = nx.empty_graph(0, create_using)
     G.add_nodes_from(d)
     # is dict a MultiGraph or MultiDiGraph?
     if multigraph_input:
@@ -362,7 +341,7 @@ def from_dict_of_dicts(d, create_using=None, multigraph_input=False):
 
 
 def to_edgelist(G, nodelist=None):
-    """Return a list of edges in the graph.
+    """Returns a list of edges in the graph.
 
     Parameters
     ----------
@@ -379,15 +358,15 @@ def to_edgelist(G, nodelist=None):
 
 
 def from_edgelist(edgelist, create_using=None):
-    """Return a graph from a list of edges.
+    """Returns a graph from a list of edges.
 
     Parameters
     ----------
     edgelist : list or iterator
       Edge tuples
 
-    create_using : NetworkX graph
-       Use specified graph for result.  Otherwise a new graph is created.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+        Graph type to create. If graph instance, then cleared before populated.
 
     Examples
     --------
@@ -399,6 +378,6 @@ def from_edgelist(edgelist, create_using=None):
     >>> G = nx.Graph(edgelist) # use Graph constructor
 
     """
-    G = _prep_create_using(create_using)
+    G = nx.empty_graph(0, create_using)
     G.add_edges_from(edgelist)
     return G

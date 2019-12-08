@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Author:  Aric Hagberg <hagberg@lanl.gov>
 """
 Shortest path algorithms for unweighted graphs.
 """
@@ -79,18 +70,23 @@ def _single_shortest_path_length(adj, firstlevel, cutoff):
         cutoff : int or float
             level at which we stop the process
     """
-    seen = {}                  # level (number of hops) when seen in BFS
-    level = 0                  # the current level
-    nextlevel = firstlevel     # dict of nodes to check at next level
-
+    seen = {}  # level (number of hops) when seen in BFS
+    level = 0  # the current level
+    nextlevel = set(firstlevel)  # set of nodes to check at next level
+    n = len(adj)
     while nextlevel and cutoff >= level:
         thislevel = nextlevel  # advance to next level
-        nextlevel = {}         # and start a new list (fringe)
+        nextlevel = set([])  # and start a new set (fringe)
+        found = []
         for v in thislevel:
             if v not in seen:
                 seen[v] = level  # set the level of vertex v
-                nextlevel.update(adj[v])  # add neighbors of v
+                found.append(v)
                 yield (v, level)
+        if len(seen) == n:
+            return
+        for v in found:
+            nextlevel.update(adj[v])
         level += 1
     del seen
 
@@ -132,7 +128,7 @@ def single_target_shortest_path_length(G, target, cutoff=None):
     single_source_shortest_path_length, shortest_path_length
     """
     if target not in G:
-        raise nx.NodeNotFound('Target {} is not in G'.format(source))
+        raise nx.NodeNotFound('Target {} is not in G'.format(target))
 
     if cutoff is None:
         cutoff = float('inf')
@@ -187,7 +183,7 @@ def all_pairs_shortest_path_length(G, cutoff=None):
 
 
 def bidirectional_shortest_path(G, source, target):
-    """Return a list of nodes in a shortest path between source and target.
+    """Returns a list of nodes in a shortest path between source and target.
 
     Parameters
     ----------
@@ -413,7 +409,7 @@ def single_target_shortest_path(G, target, cutoff=None):
     shortest_path, single_source_shortest_path
     """
     if target not in G:
-        raise nx.NodeNotFound("Target {} not in G".format(source))
+        raise nx.NodeNotFound("Target {} not in G".format(target))
 
     def join(p1, p2):
         return p2 + p1

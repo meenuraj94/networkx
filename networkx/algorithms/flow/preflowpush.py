@@ -1,17 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 Highest-label preflow-push algorithm for maximum flow problems.
 """
 
-__author__ = """ysitu <ysitu@users.noreply.github.com>"""
-# Copyright (C) 2014 ysitu <ysitu@users.noreply.github.com>
-# All rights reserved.
-# BSD license.
-
 from collections import deque
 from itertools import islice
 import networkx as nx
-#from networkx.algorithms.flow.utils import *
 from ...utils import arbitrary_element
 from .utils import build_residual_network
 from .utils import CurrentEdge
@@ -296,7 +289,7 @@ def preflow_push_impl(G, s, t, capacity, residual, global_relabel_freq,
 
 def preflow_push(G, s, t, capacity='capacity', residual=None,
                  global_relabel_freq=1, value_only=False):
-    """Find a maximum single-commodity flow using the highest-label
+    r"""Find a maximum single-commodity flow using the highest-label
     preflow-push algorithm.
 
     This function returns the residual network resulting after computing

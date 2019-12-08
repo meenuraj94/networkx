@@ -1,17 +1,4 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors:
-#     Aric Hagberg <aric.hagberg@gmail.com>
-#     Pieter Swart <swart@lanl.gov>
-#     Sasha Gutfraind <ag362@cornell.edu>
 """Functions for computing eigenvector centrality."""
-from __future__ import division
 
 from math import sqrt
 
@@ -28,16 +15,16 @@ def eigenvector_centrality(G, max_iter=100, tol=1.0e-6, nstart=None,
 
     Eigenvector centrality computes the centrality for a node based on the
     centrality of its neighbors. The eigenvector centrality for node $i$ is
+    the $i$-th element of the vector $x$ defined by the equation
 
     .. math::
 
         Ax = \lambda x
 
     where $A$ is the adjacency matrix of the graph `G` with eigenvalue
-    $\lambda$. By virtue of the Perron–Frobenius theorem, there is
-    a unique and positive solution if $\lambda$ is the largest
-    eigenvalue associated with the eigenvector of the adjacency matrix
-    $A$ ([2]_).
+    $\lambda$. By virtue of the Perron–Frobenius theorem, there is a unique
+    solution $x$, all of whose entries are positive, if $\lambda$ is the
+    largest eigenvalue of the adjacency matrix $A$ ([2]_).
 
     Parameters
     ----------
@@ -126,7 +113,8 @@ def eigenvector_centrality(G, max_iter=100, tol=1.0e-6, nstart=None,
         raise nx.NetworkXError('initial vector cannot have all zero values')
     # Normalize the initial vector so that each entry is in [0, 1]. This is
     # guaranteed to never have a divide-by-zero error by the previous line.
-    x = {k: v / sum(nstart.values()) for k, v in nstart.items()}
+    nstart_sum = sum(nstart.values())
+    x = {k: v / nstart_sum for k, v in nstart.items()}
     nnodes = G.number_of_nodes()
     # make up to max_iter iterations
     for i in range(max_iter):
@@ -135,7 +123,8 @@ def eigenvector_centrality(G, max_iter=100, tol=1.0e-6, nstart=None,
         # do the multiplication y^T = x^T A (left eigenvector)
         for n in x:
             for nbr in G[n]:
-                x[nbr] += xlast[n] * G[n][nbr].get(weight, 1)
+                w = G[n][nbr].get(weight, 1) if weight else 1
+                x[nbr] += xlast[n] * w
         # Normalize the vector. The normalization denominator `norm`
         # should never be zero by the Perron--Frobenius
         # theorem. However, in case it is due to numerical error, we
@@ -235,12 +224,3 @@ def eigenvector_centrality_numpy(G, weight=None, max_iter=50, tol=0):
     largest = eigenvector.flatten().real
     norm = sp.sign(largest.sum()) * sp.linalg.norm(largest)
     return dict(zip(G, largest / norm))
-
-
-# fixture for nose tests
-def setup_module(module):
-    from nose import SkipTest
-    try:
-        import scipy
-    except:
-        raise SkipTest("SciPy not available")

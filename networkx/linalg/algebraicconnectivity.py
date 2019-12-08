@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2014 ysitu <ysitu@users.noreply.github.com>
-# All rights reserved.
-# BSD license.
-#
-# Author: ysitu <ysitu@users.noreply.github.com>
 """
 Algebraic connectivity and Fiedler vectors of undirected graphs.
 """
@@ -11,11 +5,11 @@ from functools import partial
 import networkx as nx
 from networkx.utils import not_implemented_for
 from networkx.utils import reverse_cuthill_mckee_ordering
+from networkx.utils import random_state
 
 try:
     from numpy import array, asmatrix, asarray, dot, ndarray, ones, sqrt, zeros
     from numpy.linalg import norm, qr
-    from numpy.random import normal
     from scipy.linalg import eigh, inv
     from scipy.sparse import csc_matrix, spdiags
     from scipy.sparse.linalg import eigsh, lobpcg
@@ -288,18 +282,18 @@ def _tracemin_fiedler(L, X, normalized, tol, method):
 
 
 def _get_fiedler_func(method):
-    """Return a function that solves the Fiedler eigenvalue problem.
+    """Returns a function that solves the Fiedler eigenvalue problem.
     """
     if method == "tracemin":  # old style keyword <v2.1
         method = "tracemin_pcg"
     if method in ("tracemin_pcg", "tracemin_chol", "tracemin_lu"):
-        def find_fiedler(L, x, normalized, tol):
+        def find_fiedler(L, x, normalized, tol, seed):
             q = 1 if method == 'tracemin_pcg' else min(4, L.shape[0] - 1)
-            X = asmatrix(normal(size=(q, L.shape[0]))).T
+            X = asmatrix(seed.normal(size=(q, L.shape[0]))).T
             sigma, X = _tracemin_fiedler(L, X, normalized, tol, method)
             return sigma[0], X[:, 0]
     elif method == 'lanczos' or method == 'lobpcg':
-        def find_fiedler(L, x, normalized, tol):
+        def find_fiedler(L, x, normalized, tol, seed):
             L = csc_matrix(L, dtype=float)
             n = L.shape[0]
             if normalized:
@@ -327,10 +321,11 @@ def _get_fiedler_func(method):
     return find_fiedler
 
 
+@random_state(5)
 @not_implemented_for('directed')
 def algebraic_connectivity(G, weight='weight', normalized=False, tol=1e-8,
-                           method='tracemin_pcg'):
-    """Return the algebraic connectivity of an undirected graph.
+                           method='tracemin_pcg', seed=None):
+    """Returns the algebraic connectivity of an undirected graph.
 
     The algebraic connectivity of a connected undirected graph is the second
     smallest eigenvalue of its Laplacian matrix.
@@ -365,6 +360,10 @@ def algebraic_connectivity(G, weight='weight', normalized=False, tol=1e-8,
         'tracemin_chol' Cholesky factorization
         'tracemin_lu'   LU factorization
         =============== ========================================
+
+    seed : integer, random_state, or None (default)
+        Indicator of random number generation state.
+        See :ref:`Randomness<randomness>`.
 
     Returns
     -------
@@ -403,14 +402,15 @@ def algebraic_connectivity(G, weight='weight', normalized=False, tol=1e-8,
 
     find_fiedler = _get_fiedler_func(method)
     x = None if method != 'lobpcg' else _rcm_estimate(G, G)
-    sigma, fiedler = find_fiedler(L, x, normalized, tol)
+    sigma, fiedler = find_fiedler(L, x, normalized, tol, seed)
     return sigma
 
 
+@random_state(5)
 @not_implemented_for('directed')
 def fiedler_vector(G, weight='weight', normalized=False, tol=1e-8,
-                   method='tracemin_pcg'):
-    """Return the Fiedler vector of a connected undirected graph.
+                   method='tracemin_pcg', seed=None):
+    """Returns the Fiedler vector of a connected undirected graph.
 
     The Fiedler vector of a connected undirected graph is the eigenvector
     corresponding to the second smallest eigenvalue of the Laplacian matrix of
@@ -446,6 +446,10 @@ def fiedler_vector(G, weight='weight', normalized=False, tol=1e-8,
         'tracemin_chol' Cholesky factorization
         'tracemin_lu'   LU factorization
         =============== ========================================
+
+    seed : integer, random_state, or None (default)
+        Indicator of random number generation state.
+        See :ref:`Randomness<randomness>`.
 
     Returns
     -------
@@ -484,12 +488,13 @@ def fiedler_vector(G, weight='weight', normalized=False, tol=1e-8,
     find_fiedler = _get_fiedler_func(method)
     L = nx.laplacian_matrix(G)
     x = None if method != 'lobpcg' else _rcm_estimate(G, G)
-    sigma, fiedler = find_fiedler(L, x, normalized, tol)
+    sigma, fiedler = find_fiedler(L, x, normalized, tol, seed)
     return fiedler
 
 
+@random_state(5)
 def spectral_ordering(G, weight='weight', normalized=False, tol=1e-8,
-                      method='tracemin_pcg'):
+                      method='tracemin_pcg', seed=None):
     """Compute the spectral_ordering of a graph.
 
     The spectral ordering of a graph is an ordering of its nodes where nodes
@@ -527,6 +532,10 @@ def spectral_ordering(G, weight='weight', normalized=False, tol=1e-8,
         'tracemin_lu'   LU factorization
         =============== ========================================
 
+    seed : integer, random_state, or None (default)
+        Indicator of random number generation state.
+        See :ref:`Randomness<randomness>`.
+
     Returns
     -------
     spectral_ordering : NumPy array of floats.
@@ -560,20 +569,10 @@ def spectral_ordering(G, weight='weight', normalized=False, tol=1e-8,
         if size > 2:
             L = nx.laplacian_matrix(G, component)
             x = None if method != 'lobpcg' else _rcm_estimate(G, component)
-            sigma, fiedler = find_fiedler(L, x, normalized, tol)
+            sigma, fiedler = find_fiedler(L, x, normalized, tol, seed)
             sort_info = zip(fiedler, range(size), component)
             order.extend(u for x, c, u in sorted(sort_info))
         else:
             order.extend(component)
 
     return order
-
-
-# fixture for nose tests
-def setup_module(module):
-    from nose import SkipTest
-    try:
-        import numpy
-        import scipy.sparse
-    except ImportError:
-        raise SkipTest('SciPy not available.')

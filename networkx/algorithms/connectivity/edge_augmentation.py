@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors: Jon Crall (erotemic@gmail.com)
 """
 Algorithms for finding k-edge-augmentations
 
@@ -21,12 +12,10 @@ See Also
 :mod:`edge_kcomponents` : algorithms for finding k-edge-connected components
 :mod:`connectivity` : algorithms for determening edge connectivity.
 """
-import random
 import math
-import sys
 import itertools as it
 import networkx as nx
-from networkx.utils import not_implemented_for
+from networkx.utils import not_implemented_for, py_random_state
 from collections import defaultdict, namedtuple
 
 __all__ = [
@@ -199,10 +188,10 @@ def k_edge_augmentation(G, k, avail=None, weight=None, partial=False):
 
     Raises
     ------
-    NetworkXUnfeasible:
+    NetworkXUnfeasible
         If partial is False and no k-edge-augmentation exists.
 
-    NetworkXNotImplemented:
+    NetworkXNotImplemented
         If the input graph is directed or a multigraph.
 
     ValueError:
@@ -426,7 +415,7 @@ def one_edge_augmentation(G, avail=None, weight=None, partial=False):
 
     Raises
     ------
-    NetworkXUnfeasible:
+    NetworkXUnfeasible
         If partial is False and no one-edge-augmentation exists.
 
     Notes
@@ -476,7 +465,7 @@ def bridge_augmentation(G, avail=None, weight=None):
 
     Raises
     ------
-    NetworkXUnfeasible:
+    NetworkXUnfeasible
         If no bridge-augmentation exists.
 
     Notes
@@ -813,7 +802,10 @@ def unconstrained_bridge_augmentation(G):
         A2 = [tuple(leafs)]
     else:
         # Choose an arbitrary non-leaf root
-        root = next(n for n, d in T.degree() if d > 1)
+        try:
+            root = next(n for n, d in T.degree() if d > 1)
+        except StopIteration:  # no nodes found with degree > 1
+            return
         # order the leaves of C by (induced directed) preorder
         v2 = [n for n in nx.dfs_preorder_nodes(T, root) if T.degree(n) == 1]
         # connecting first half of the leafs in pre-order to the second
@@ -954,7 +946,10 @@ def weighted_bridge_augmentation(G, avail, weight=None):
     #     nx.least_common_ancestor on the reversed Tree.
 
     # Pick an arbitrary leaf from C as the root
-    root = next(n for n in C.nodes() if C.degree(n) == 1)
+    try:
+        root = next(n for n, d in C.degree() if d == 1)
+    except StopIteration:  # no nodes found with degree == 1
+        return
     # Root C into a tree TR by directing all edges away from the root
     # Note in their paper T directs edges towards the root
     TR = nx.dfs_tree(C, root)
@@ -1140,34 +1135,12 @@ def complement_edges(G):
                 yield (u, v)
 
 
-if sys.version_info[0] == 2:
-    def _compat_shuffle(rng, input):
-        """
-        python2 workaround so shuffle works the same as python3
-
-        References
-        ----------
-        https://stackoverflow.com/questions/38943038/diff-shuffle-py2-py3
-        """
-        def _randbelow(n):
-            "Return a random int in the range [0,n). Raises ValueError if n==0."
-            getrandbits = rng.getrandbits
-            k = n.bit_length()  # don't use (n-1) here because n can be 1
-            r = getrandbits(k)  # 0 <= r < 2**k
-            while r >= n:
-                r = getrandbits(k)
-            return r
-
-        for i in range(len(input) - 1, 0, -1):
-            # pick an element in input[:i+1] with which to exchange input[i]
-            j = _randbelow(i + 1)
-            input[i], input[j] = input[j], input[i]
-else:
-    def _compat_shuffle(rng, input):
-        """wrapper around rng.shuffle for python 2 compatibility reasons"""
-        rng.shuffle(input)
+def _compat_shuffle(rng, input):
+    """wrapper around rng.shuffle for python 2 compatibility reasons"""
+    rng.shuffle(input)
 
 
+@py_random_state(4)
 @not_implemented_for('multigraph')
 @not_implemented_for('directed')
 def greedy_k_edge_augmentation(G, k, avail=None, weight=None, seed=None):
@@ -1188,8 +1161,9 @@ def greedy_k_edge_augmentation(G, k, avail=None, weight=None, seed=None):
         key to use to find weights if ``avail`` is a set of 3-tuples.
         For more details, see :func:`k_edge_augmentation`.
 
-    seed : integer or None
-        seed for the random number generator used in this algorithm
+    seed : integer, random_state, or None (default)
+        Indicator of random number generation state.
+        See :ref:`Randomness<randomness>`.
 
     Yields
     ------
@@ -1230,7 +1204,7 @@ def greedy_k_edge_augmentation(G, k, avail=None, weight=None, seed=None):
 
     done = is_k_edge_connected(G, k)
     if done:
-        raise StopIteration()
+        return
     if avail is None:
         # all edges are available
         avail_uv = list(complement_edges(G))
@@ -1264,8 +1238,7 @@ def greedy_k_edge_augmentation(G, k, avail=None, weight=None, seed=None):
             'not able to k-edge-connect with available edges')
 
     # Randomized attempt to reduce the size of the solution
-    rng = random.Random(seed)
-    _compat_shuffle(rng, aug_edges)
+    _compat_shuffle(seed, aug_edges)
     for (u, v) in list(aug_edges):
         # Don't remove if we know it would break connectivity
         if H.degree(u) <= k or H.degree(v) <= k:

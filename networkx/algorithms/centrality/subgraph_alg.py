@@ -1,17 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Subraph centrality and communicability betweenness.
 """
-#    Copyright (C) 2011 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 import networkx as nx
-from networkx.utils import *
-__author__ = "\n".join(['Aric Hagberg (hagberg@lanl.gov)',
-                        'Franck Kalala (franckkalala@yahoo.fr'])
+from networkx.utils import not_implemented_for
+
 __all__ = ['subgraph_centrality_exp',
            'subgraph_centrality',
            'communicability_betweenness_centrality',
@@ -22,7 +14,7 @@ __all__ = ['subgraph_centrality_exp',
 @not_implemented_for('directed')
 @not_implemented_for('multigraph')
 def subgraph_centrality_exp(G):
-    r"""Return the subgraph centrality for each node of G.
+    r"""Returns the subgraph centrality for each node of G.
 
     Subgraph centrality  of a node `n` is the sum of weighted closed
     walks of all lengths starting and ending at node `n`. The weights
@@ -77,10 +69,10 @@ def subgraph_centrality_exp(G):
     # alternative implementation that calculates the matrix exponential
     import scipy.linalg
     nodelist = list(G)  # ordering of nodes in matrix
-    A = nx.to_numpy_matrix(G, nodelist)
+    A = nx.to_numpy_array(G, nodelist)
     # convert to 0-1 matrix
     A[A != 0.0] = 1
-    expA = scipy.linalg.expm(A.A)
+    expA = scipy.linalg.expm(A)
     # convert diagonal to dictionary keyed by node
     sc = dict(zip(nodelist, map(float, expA.diagonal())))
     return sc
@@ -89,7 +81,7 @@ def subgraph_centrality_exp(G):
 @not_implemented_for('directed')
 @not_implemented_for('multigraph')
 def subgraph_centrality(G):
-    r"""Return subgraph centrality for each node in G.
+    r"""Returns subgraph centrality for each node in G.
 
     Subgraph centrality  of a node `n` is the sum of weighted closed
     walks of all lengths starting and ending at node `n`. The weights
@@ -164,7 +156,7 @@ def subgraph_centrality(G):
 @not_implemented_for('directed')
 @not_implemented_for('multigraph')
 def communicability_betweenness_centrality(G, normalized=True):
-    r"""Return subgraph communicability for all pairs of nodes in G.
+    r"""Returns subgraph communicability for all pairs of nodes in G.
 
     Communicability betweenness measure makes use of the number of walks
     connecting every pair of nodes as the basis of a betweenness centrality
@@ -272,7 +264,7 @@ def _rescale(cbc, normalized):
 
 
 def estrada_index(G):
-    r"""Return the Estrada index of a the graph G.
+    r"""Returns the Estrada index of a the graph G.
 
     The Estrada Index is a topological index of folding or 3D "compactness" ([1]_).
 
@@ -315,17 +307,3 @@ def estrada_index(G):
     >>> ei=nx.estrada_index(G)
     """
     return sum(subgraph_centrality(G).values())
-
-# fixture for nose tests
-
-
-def setup_module(module):
-    from nose import SkipTest
-    try:
-        import numpy
-    except:
-        raise SkipTest("NumPy not available")
-    try:
-        import scipy
-    except:
-        raise SkipTest("SciPy not available")

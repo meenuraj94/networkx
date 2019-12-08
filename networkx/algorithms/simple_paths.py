@@ -1,19 +1,10 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2012 by
-#    Sergio Nery Simoes <sergionery@gmail.com>
-#    All rights reserved.
-#    BSD license.
+import collections
 from heapq import heappush, heappop
 from itertools import count
 
 import networkx as nx
 from networkx.utils import not_implemented_for
 from networkx.utils import pairwise
-
-__author__ = """\n""".join(['Sérgio Nery Simões <sergionery@gmail.com>',
-                            'Aric Hagberg <aric.hagberg@gmail.com>',
-                            'Andrey Paramonov',
-                            'Jordi Torrents <jordi.t21@gmail.com>'])
 
 __all__ = [
     'all_simple_paths',
@@ -102,8 +93,8 @@ def all_simple_paths(G, source, target, cutoff=None):
     source : node
        Starting node for path
 
-    target : node
-       Ending node for path
+    target : nodes
+       Single node or iterable of nodes at which to end path
 
     cutoff : integer, optional
         Depth to stop the search. Only paths of length <= cutoff are returned.
@@ -148,6 +139,23 @@ def all_simple_paths(G, source, target, cutoff=None):
         [(0, 2), (2, 3)]
         [(0, 3)]
 
+    Pass an iterable of nodes as target to generate all paths ending in any of several nodes::
+
+        >>> G = nx.complete_graph(4)
+        >>> for path in nx.all_simple_paths(G, source=0, target=[3, 2]):
+        ...     print(path)
+        ...
+        [0, 1, 2]
+        [0, 1, 2, 3]
+        [0, 1, 3]
+        [0, 1, 3, 2]
+        [0, 2]
+        [0, 2, 1, 3]
+        [0, 2, 3]
+        [0, 3]
+        [0, 3, 1, 2]
+        [0, 3, 2]
+
     Iterate over each path from the root nodes to the leaf nodes in a
     directed acyclic graph using a functional programming approach::
 
@@ -178,6 +186,20 @@ def all_simple_paths(G, source, target, cutoff=None):
         >>> all_paths
         [[0, 1, 2], [0, 3, 2]]
 
+    Iterate over each path from the root nodes to the leaf nodes in a
+    directed acyclic graph passing all leaves together to avoid unnecessary
+    compute::
+
+        >>> G = nx.DiGraph([(0, 1), (2, 1), (1, 3), (1, 4)])
+        >>> roots = (v for v, d in G.in_degree() if d == 0)
+        >>> leaves = [v for v, d in G.out_degree() if d == 0]
+        >>> all_paths = []
+        >>> for root in roots:
+        ...     paths = nx.all_simple_paths(G, root, leaves)
+        ...     all_paths.extend(paths)
+        >>> all_paths
+        [[0, 1, 3], [0, 1, 4], [2, 1, 3], [2, 1, 4]]
+
     Notes
     -----
     This algorithm uses a modified depth-first search to generate the
@@ -197,65 +219,77 @@ def all_simple_paths(G, source, target, cutoff=None):
     """
     if source not in G:
         raise nx.NodeNotFound('source node %s not in graph' % source)
-    if target not in G:
-        raise nx.NodeNotFound('target node %s not in graph' % target)
-    if source == target:
+    if target in G:
+        targets = {target}
+    else:
+        try:
+            targets = set(target)
+        except TypeError:
+            raise nx.NodeNotFound('target node %s not in graph' % target)
+    if source in targets:
         return []
     if cutoff is None:
         cutoff = len(G) - 1
-    if G.is_multigraph():
-        return _all_simple_paths_multigraph(G, source, target, cutoff=cutoff)
-    else:
-        return _all_simple_paths_graph(G, source, target, cutoff=cutoff)
-
-
-def _all_simple_paths_graph(G, source, target, cutoff=None):
     if cutoff < 1:
-        return
-    visited = [source]
+        return []
+    if G.is_multigraph():
+        return _all_simple_paths_multigraph(G, source, targets, cutoff)
+    else:
+        return _all_simple_paths_graph(G, source, targets, cutoff)
+
+
+def _all_simple_paths_graph(G, source, targets, cutoff):
+    visited = collections.OrderedDict.fromkeys([source])
     stack = [iter(G[source])]
     while stack:
         children = stack[-1]
         child = next(children, None)
         if child is None:
             stack.pop()
-            visited.pop()
+            visited.popitem()
         elif len(visited) < cutoff:
-            if child == target:
-                yield visited + [target]
-            elif child not in visited:
-                visited.append(child)
+            if child in visited:
+                continue
+            if child in targets:
+                yield list(visited) + [child]
+            visited[child] = None
+            if targets - set(visited.keys()):  # expand stack until find all targets
                 stack.append(iter(G[child]))
+            else:
+                visited.popitem()  # maybe other ways to child
         else:  # len(visited) == cutoff:
-            if child == target or target in children:
-                yield visited + [target]
+            for target in (targets & (set(children) | {child})) - set(visited.keys()):
+                yield list(visited) + [target]
             stack.pop()
-            visited.pop()
+            visited.popitem()
 
 
-def _all_simple_paths_multigraph(G, source, target, cutoff=None):
-    if cutoff < 1:
-        return
-    visited = [source]
+def _all_simple_paths_multigraph(G, source, targets, cutoff):
+    visited = collections.OrderedDict.fromkeys([source])
     stack = [(v for u, v in G.edges(source))]
     while stack:
         children = stack[-1]
         child = next(children, None)
         if child is None:
             stack.pop()
-            visited.pop()
+            visited.popitem()
         elif len(visited) < cutoff:
-            if child == target:
-                yield visited + [target]
-            elif child not in visited:
-                visited.append(child)
+            if child in visited:
+                continue
+            if child in targets:
+                yield list(visited) + [child]
+            visited[child] = None
+            if targets - set(visited.keys()):
                 stack.append((v for u, v in G.edges(child)))
+            else:
+                visited.popitem()
         else:  # len(visited) == cutoff:
-            count = ([child] + list(children)).count(target)
-            for i in range(count):
-                yield visited + [target]
+            for target in targets - set(visited.keys()):
+                count = ([child] + list(children)).count(target)
+                for i in range(count):
+                    yield list(visited) + [target]
             stack.pop()
-            visited.pop()
+            visited.popitem()
 
 
 @not_implemented_for('multigraph')
@@ -266,7 +300,7 @@ def shortest_simple_paths(G, source, target, weight=None):
     A simple path is a path with no repeated nodes.
 
     If a weighted shortest path search is to be used, no negative weights
-    are allawed.
+    are allowed.
 
     Parameters
     ----------
@@ -413,7 +447,7 @@ def _bidirectional_shortest_path(G, source, target,
                                  ignore_nodes=None,
                                  ignore_edges=None,
                                  weight=None):
-    """Return the shortest path between source and target ignoring
+    """Returns the shortest path between source and target ignoring
        nodes and edges in the containers ignore_nodes and ignore_edges.
 
     This is a custom modification of the standard bidirectional shortest
@@ -713,7 +747,7 @@ def _bidirectional_dijkstra(G, source, target, weight='weight',
     # neighs for extracting correct neighbor information
     neighs = [Gsucc, Gpred]
     # variables to hold shortest discovered path
-    #finaldist = 1e30000
+    # finaldist = 1e30000
     finalpath = []
     dir = 1
     while fringe[0] and fringe[1]:

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 Flow based connectivity algorithms
 """
-from __future__ import division
 
 import itertools
 from operator import itemgetter
@@ -19,8 +17,6 @@ default_flow_func = edmonds_karp
 
 from .utils import (build_auxiliary_node_connectivity,
                     build_auxiliary_edge_connectivity)
-
-__author__ = '\n'.join(['Jordi Torrents <jtorrents@milnou.net>'])
 
 __all__ = ['average_node_connectivity',
            'local_node_connectivity',
@@ -211,7 +207,7 @@ def local_node_connectivity(G, s, t, flow_func=None, auxiliary=None,
 
 
 def node_connectivity(G, s=None, t=None, flow_func=None):
-    """Returns node connectivity for a graph or digraph G.
+    r"""Returns node connectivity for a graph or digraph G.
 
     Node connectivity is equal to the minimum number of nodes that
     must be removed to disconnect G or render it trivial. If source

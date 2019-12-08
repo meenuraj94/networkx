@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2014
-# ysitu <ysitu@users.noreply.github.com>
-# All rights reserved.
-# BSD license.
 """
 Stoer-Wagner minimum cut algorithm.
 """
@@ -14,15 +8,13 @@ from ...utils import BinaryHeap
 from ...utils import not_implemented_for
 from ...utils import arbitrary_element
 
-__author__ = 'ysitu <ysitu@users.noreply.github.com>'
-
 __all__ = ['stoer_wagner']
 
 
 @not_implemented_for('directed')
 @not_implemented_for('multigraph')
 def stoer_wagner(G, weight='weight', heap=BinaryHeap):
-    """Returns the weighted minimum edge cut using the Stoer-Wagner algorithm.
+    r"""Returns the weighted minimum edge cut using the Stoer-Wagner algorithm.
 
     Determine the minimum edge cut of a connected graph using the
     Stoer-Wagner algorithm. In weighted cases, all weights must be

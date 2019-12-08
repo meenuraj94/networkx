@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors: Jon Crall (erotemic@gmail.com)
 """
 Algorithms for finding k-edge-connected components and subgraphs.
 
@@ -58,7 +49,7 @@ def k_edge_components(G, k):
 
     Raises
     ------
-    NetworkXNotImplemented:
+    NetworkXNotImplemented
         If the input graph is a multigraph.
 
     ValueError:
@@ -141,7 +132,7 @@ def k_edge_subgraphs(G, k):
 
     Raises
     ------
-    NetworkXNotImplemented:
+    NetworkXNotImplemented
         If the input graph is a multigraph.
 
     ValueError:
@@ -225,7 +216,7 @@ def bridge_components(G):
 
     Raises
     ------
-    NetworkXNotImplemented:
+    NetworkXNotImplemented
         If the input graph is directed or a multigraph.
 
     Notes
@@ -364,7 +355,7 @@ class EdgeComponentAuxGraph(object):
             _recursive_build(H, A, sink, avail.intersection(T))
 
         # Copy input to ensure all edges have unit capacity
-        H = G.fresh_copy()
+        H = G.__class__()
         H.add_nodes_from(G.nodes())
         H.add_edges_from(G.edges(), capacity=1)
 
@@ -573,7 +564,7 @@ def general_k_edge_subgraphs(G, k):
     if G.number_of_nodes() < k:
         for node in G.nodes():
             yield G.subgraph([node]).copy()
-        raise StopIteration()
+        return
 
     # Intermediate results
     R0 = {G.subgraph(cc).copy() for cc in find_ccs(G)}

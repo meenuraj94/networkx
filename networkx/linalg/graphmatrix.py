@@ -1,16 +1,7 @@
 """
 Adjacency matrix and incidence matrix of graphs.
 """
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 import networkx as nx
-__author__ = "\n".join(['Aric Hagberg (hagberg@lanl.gov)',
-                        'Pieter Swart (swart@lanl.gov)',
-                        'Dan Schult(dschult@colgate.edu)'])
 
 __all__ = ['incidence_matrix',
            'adj_matrix', 'adjacency_matrix',
@@ -19,7 +10,7 @@ __all__ = ['incidence_matrix',
 
 def incidence_matrix(G, nodelist=None, edgelist=None,
                      oriented=False, weight=None):
-    """Return incidence matrix of G.
+    """Returns incidence matrix of G.
 
     The incidence matrix assigns each row to a node and each column to an edge.
     For a standard incidence matrix a 1 appears wherever a row's node is
@@ -106,7 +97,7 @@ def incidence_matrix(G, nodelist=None, edgelist=None,
 
 
 def adjacency_matrix(G, nodelist=None, weight='weight'):
-    """Return adjacency matrix of G.
+    """Returns adjacency matrix of G.
 
     Parameters
     ----------
@@ -158,18 +149,9 @@ def adjacency_matrix(G, nodelist=None, weight='weight'):
     to_numpy_matrix
     to_scipy_sparse_matrix
     to_dict_of_dicts
+    adjacency_spectrum
     """
     return nx.to_scipy_sparse_matrix(G, nodelist=nodelist, weight=weight)
 
 
 adj_matrix = adjacency_matrix
-
-# fixture for nose tests
-
-
-def setup_module(module):
-    from nose import SkipTest
-    try:
-        import scipy
-    except:
-        raise SkipTest("SciPy not available")

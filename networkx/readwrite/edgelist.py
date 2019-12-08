@@ -26,13 +26,6 @@ Arbitrary data::
 
  1 2 7 green
 """
-__author__ = """Aric Hagberg (hagberg@lanl.gov)\nDan Schult (dschult@colgate.edu)"""
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 
 __all__ = ['generate_edgelist',
            'write_edgelist',
@@ -41,7 +34,7 @@ __all__ = ['generate_edgelist',
            'read_weighted_edgelist',
            'write_weighted_edgelist']
 
-from networkx.utils import open_file, make_str
+from networkx.utils import open_file
 import networkx as nx
 
 
@@ -113,11 +106,11 @@ def generate_edgelist(G, delimiter=' ', data=True):
     if data is True:
         for u, v, d in G.edges(data=True):
             e = u, v, dict(d)
-            yield delimiter.join(map(make_str, e))
+            yield delimiter.join(map(str, e))
     elif data is False:
         for u, v in G.edges(data=False):
             e = u, v
-            yield delimiter.join(map(make_str, e))
+            yield delimiter.join(map(str, e))
     else:
         for u, v, d in G.edges(data=True):
             e = [u, v]
@@ -125,7 +118,7 @@ def generate_edgelist(G, delimiter=' ', data=True):
                 e.extend(d[k] for k in data)
             except KeyError:
                 pass  # missing data for this edge, should warn?
-            yield delimiter.join(map(make_str, e))
+            yield delimiter.join(map(str, e))
 
 
 @open_file(1, mode='wb')
@@ -170,8 +163,8 @@ def write_edgelist(G, path, comments="#", delimiter=' ', data=True,
 
     See Also
     --------
-    write_edgelist()
-    write_weighted_edgelist()
+    read_edgelist
+    write_weighted_edgelist
     """
 
     for line in generate_edgelist(G, delimiter, data):
@@ -191,8 +184,8 @@ def parse_edgelist(lines, comments='#', delimiter=None,
        Marker for comment lines
     delimiter : string, optional
        Separator for node labels
-    create_using: NetworkX graph container, optional
-       Use given NetworkX graph for holding nodes or edges.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+       Graph type to create. If graph instance, then cleared before populated.
     nodetype : Python type, optional
        Convert nodes to this type.
     data : bool or list of (label,type) tuples
@@ -243,18 +236,9 @@ def parse_edgelist(lines, comments='#', delimiter=None,
     See Also
     --------
     read_weighted_edgelist
-
     """
     from ast import literal_eval
-    if create_using is None:
-        G = nx.Graph()
-    else:
-        try:
-            G = create_using
-            G.clear()
-        except:
-            raise TypeError("create_using input is not a NetworkX graph type")
-
+    G = nx.empty_graph(0, create_using)
     for line in lines:
         p = line.find(comments)
         if p >= 0:
@@ -320,9 +304,8 @@ def read_edgelist(path, comments="#", delimiter=None, create_using=None,
        The character used to indicate the start of a comment.
     delimiter : string, optional
        The string used to separate values.  The default is whitespace.
-    create_using : Graph container, optional,
-       Use specified container to build graph.  The default is networkx.Graph,
-       an undirected graph.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+       Graph type to create. If graph instance, then cleared before populated.
     nodetype : int, float, str, Python type, optional
        Convert node data from strings to specified type
     data : bool or list of (label,type) tuples
@@ -347,7 +330,7 @@ def read_edgelist(path, comments="#", delimiter=None, create_using=None,
     >>> fh.close()
 
     >>> G=nx.read_edgelist("test.edgelist", nodetype=int)
-    >>> G=nx.read_edgelist("test.edgelist",create_using=nx.DiGraph())
+    >>> G=nx.read_edgelist("test.edgelist",create_using=nx.DiGraph)
 
     Edgelist with data in a list:
 
@@ -366,13 +349,14 @@ def read_edgelist(path, comments="#", delimiter=None, create_using=None,
     See Also
     --------
     parse_edgelist
+    write_edgelist
 
     Notes
     -----
     Since nodes must be hashable, the function nodetype must return hashable
     types (e.g. int, float, str, frozenset - or tuples of those, etc.)
     """
-    lines = (line.decode(encoding) for line in path)
+    lines = (line if isinstance(line, str) else line.decode(encoding) for line in path)
     return parse_edgelist(lines, comments=comments, delimiter=delimiter,
                           create_using=create_using, nodetype=nodetype,
                           data=data)
@@ -405,10 +389,9 @@ def write_weighted_edgelist(G, path, comments="#",
 
     See Also
     --------
-    read_edgelist()
-    write_edgelist()
-    write_weighted_edgelist()
-
+    read_edgelist
+    write_edgelist
+    read_weighted_edgelist
     """
     write_edgelist(G, path, comments=comments, delimiter=delimiter,
                    data=('weight',), encoding=encoding)
@@ -428,9 +411,8 @@ def read_weighted_edgelist(path, comments="#", delimiter=None,
        The character used to indicate the start of a comment.
     delimiter : string, optional
        The string used to separate values.  The default is whitespace.
-    create_using : Graph container, optional,
-       Use specified container to build graph.  The default is networkx.Graph,
-       an undirected graph.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+       Graph type to create. If graph instance, then cleared before populated.
     nodetype : int, float, str, Python type, optional
        Convert node data from strings to specified type
     encoding: string, optional
@@ -456,6 +438,10 @@ def read_weighted_edgelist(path, comments="#", delimiter=None,
      a b 1
      a c 3.14159
      d e 42
+
+    See Also
+    --------
+    write_weighted_edgelist
     """
     return read_edgelist(path,
                          comments=comments,
@@ -465,12 +451,3 @@ def read_weighted_edgelist(path, comments="#", delimiter=None,
                          data=(('weight', float),),
                          encoding=encoding
                          )
-
-
-# fixture for nose tests
-def teardown_module(module):
-    import os
-    for fname in ['test.edgelist', 'test.edgelist.gz',
-                  'test.weighted.edgelist']:
-        if os.path.isfile(fname):
-            os.unlink(fname)

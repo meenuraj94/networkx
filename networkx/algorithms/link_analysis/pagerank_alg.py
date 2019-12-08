@@ -1,15 +1,7 @@
 """PageRank analysis of graph structure. """
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#    NetworkX:http://networkx.github.io/
 import networkx as nx
 from networkx.utils import not_implemented_for
-__author__ = """\n""".join(["Aric Hagberg <aric.hagberg@gmail.com>",
-                            "Brandon Liu <brandon.k.liu@gmail.com"])
+
 __all__ = ['pagerank', 'pagerank_numpy', 'pagerank_scipy', 'google_matrix']
 
 
@@ -17,7 +9,7 @@ __all__ = ['pagerank', 'pagerank_numpy', 'pagerank_scipy', 'google_matrix']
 def pagerank(G, alpha=0.85, personalization=None,
              max_iter=100, tol=1.0e-6, nstart=None, weight='weight',
              dangling=None):
-    """Return the PageRank of the nodes in the graph.
+    """Returns the PageRank of the nodes in the graph.
 
     PageRank computes a ranking of the nodes in the graph G based on
     the structure of the incoming links. It was originally designed as
@@ -160,7 +152,7 @@ def pagerank(G, alpha=0.85, personalization=None,
 
 def google_matrix(G, alpha=0.85, personalization=None,
                   nodelist=None, weight='weight', dangling=None):
-    """Return the Google matrix of the graph.
+    """Returns the Google matrix of the graph.
 
     Parameters
     ----------
@@ -254,7 +246,7 @@ def google_matrix(G, alpha=0.85, personalization=None,
 
 def pagerank_numpy(G, alpha=0.85, personalization=None, weight='weight',
                    dangling=None):
-    """Return the PageRank of the nodes in the graph.
+    """Returns the PageRank of the nodes in the graph.
 
     PageRank computes a ranking of the nodes in the graph G based on
     the structure of the incoming links. It was originally designed as
@@ -336,9 +328,9 @@ def pagerank_numpy(G, alpha=0.85, personalization=None, weight='weight',
 
 
 def pagerank_scipy(G, alpha=0.85, personalization=None,
-                   max_iter=100, tol=1.0e-6, weight='weight',
+                   max_iter=100, tol=1.0e-6, nstart=None, weight='weight',
                    dangling=None):
-    """Return the PageRank of the nodes in the graph.
+    """Returns the PageRank of the nodes in the graph.
 
     PageRank computes a ranking of the nodes in the graph G based on
     the structure of the incoming links. It was originally designed as
@@ -365,6 +357,9 @@ def pagerank_scipy(G, alpha=0.85, personalization=None,
 
     tol : float, optional
       Error tolerance used to check convergence in power method solver.
+
+    nstart : dictionary, optional
+      Starting value of PageRank iteration for each node.
 
     weight : key, optional
       Edge data key to use as weight.  If None weights are set to 1.
@@ -432,7 +427,11 @@ def pagerank_scipy(G, alpha=0.85, personalization=None,
     M = Q * M
 
     # initial vector
-    x = scipy.repeat(1.0 / N, N)
+    if nstart is None:
+        x = scipy.repeat(1.0 / N, N)
+    else:
+        x = scipy.array([nstart.get(n, 0) for n in nodelist], dtype=float)
+        x = x / x.sum()
 
     # Personalization vector
     if personalization is None:
@@ -461,16 +460,3 @@ def pagerank_scipy(G, alpha=0.85, personalization=None,
         if err < N * tol:
             return dict(zip(nodelist, map(float, x)))
     raise nx.PowerIterationFailedConvergence(max_iter)
-
-
-# fixture for nose tests
-def setup_module(module):
-    from nose import SkipTest
-    try:
-        import numpy
-    except:
-        raise SkipTest("NumPy not available")
-    try:
-        import scipy
-    except:
-        raise SkipTest("SciPy not available")

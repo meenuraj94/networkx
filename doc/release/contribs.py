@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # https://github.com/scikit-image/scikit-image/blob/master/doc/release/contribs.py
 import subprocess
 import sys
@@ -25,6 +24,10 @@ merges = [m for m in merges if len(m) == 2 and m[1].strip()]
 
 num_commits = call("git rev-list %s..HEAD --count" % tag)[0]
 print("A total of %s changes have been committed.\n" % num_commits)
+
+commits = call("git log --since='%s' --pretty=%%s --reverse" % tag_date)
+for c in commits:
+    print('- ' + c)
 
 print("It contained the following %d merges:\n" % len(merges))
 for (merge, message) in merges:

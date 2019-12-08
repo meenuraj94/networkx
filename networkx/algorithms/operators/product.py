@@ -1,15 +1,3 @@
-#    Copyright (C) 2011 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
-#
-# Authors:
-#     Aric Hagberg <hagberg@lanl.gov>
-#     Pieter Swart <swart@lanl.gov>
-#     Dan Schult <dschult@colgate.edu>
-#     Ben Edwards <bedwards@cs.unm.edu>
 """
 Graph products.
 """
@@ -117,8 +105,8 @@ def _edges_cross_nodes_and_nodes(G, H):
 
 def _init_product_graph(G, H):
     if not G.is_directed() == H.is_directed():
-        raise nx.NetworkXError("G and H must be both directed or",
-                               "both undirected")
+        msg = "G and H must be both directed or both undirected"
+        raise nx.NetworkXError(msg)
     if G.is_multigraph() or H.is_multigraph():
         GH = nx.MultiGraph()
     else:
@@ -129,7 +117,7 @@ def _init_product_graph(G, H):
 
 
 def tensor_product(G, H):
-    r"""Return the tensor product of G and H.
+    r"""Returns the tensor product of G and H.
 
     The tensor product $P$ of the graphs $G$ and $H$ has a node set that
     is the tensor product of the node sets, $V(P)=V(G) \times V(H)$.
@@ -184,7 +172,7 @@ def tensor_product(G, H):
 
 
 def cartesian_product(G, H):
-    r"""Return the Cartesian product of G and H.
+    r"""Returns the Cartesian product of G and H.
 
     The Cartesian product $P$ of the graphs $G$ and $H$ has a node set that
     is the Cartesian product of the node sets, $V(P)=V(G) \times V(H)$.
@@ -227,9 +215,6 @@ def cartesian_product(G, H):
     Edge attributes and edge keys (for multigraphs) are also copied to the
     new product graph
     """
-    if not G.is_directed() == H.is_directed():
-        raise nx.NetworkXError("G and H must be both directed or",
-                               "both undirected")
     GH = _init_product_graph(G, H)
     GH.add_nodes_from(_node_product(G, H))
     GH.add_edges_from(_edges_cross_nodes(G, H))
@@ -238,7 +223,7 @@ def cartesian_product(G, H):
 
 
 def lexicographic_product(G, H):
-    r"""Return the lexicographic product of G and H.
+    r"""Returns the lexicographic product of G and H.
 
     The lexicographical product $P$ of the graphs $G$ and $H$ has a node set
     that is the Cartesian product of the node sets, $V(P)=V(G) \times V(H)$.
@@ -290,7 +275,7 @@ def lexicographic_product(G, H):
 
 
 def strong_product(G, H):
-    r"""Return the strong product of G and H.
+    r"""Returns the strong product of G and H.
 
     The strong product $P$ of the graphs $G$ and $H$ has a node set that
     is the Cartesian product of the node sets, $V(P)=V(G) \times V(H)$.

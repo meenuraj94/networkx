@@ -22,20 +22,13 @@ Arbitrary data::
 
 For each edge (u, v) the node u is assigned to part 0 and the node v to part 1.
 """
-#    Copyright (C) 2015 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 __all__ = ['generate_edgelist',
            'write_edgelist',
            'parse_edgelist',
            'read_edgelist']
 
 import networkx as nx
-from networkx.utils import open_file, make_str, not_implemented_for
-from networkx.convert import _prep_create_using
+from networkx.utils import open_file, not_implemented_for
 
 
 @open_file(1, mode='wb')
@@ -145,7 +138,7 @@ def generate_edgelist(G, delimiter=' ', data=True):
     if data is True or data is False:
         for n in part0:
             for e in G.edges(n, data=data):
-                yield delimiter.join(map(make_str, e))
+                yield delimiter.join(map(str, e))
     else:
         for n in part0:
             for u, v, d in G.edges(n, data=True):
@@ -154,7 +147,7 @@ def generate_edgelist(G, delimiter=' ', data=True):
                     e.extend(d[k] for k in data)
                 except KeyError:
                     pass  # missing data for this edge, should warn?
-                yield delimiter.join(map(make_str, e))
+                yield delimiter.join(map(str, e))
 
 
 def parse_edgelist(lines, comments='#', delimiter=None,
@@ -225,7 +218,7 @@ def parse_edgelist(lines, comments='#', delimiter=None,
     --------
     """
     from ast import literal_eval
-    G = _prep_create_using(create_using)
+    G = nx.empty_graph(0, create_using)
     for line in lines:
         p = line.find(comments)
         if p >= 0:

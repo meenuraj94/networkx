@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 **************
 Adjacency List
@@ -22,22 +21,13 @@ adjacency list (anything following the # in a line is a comment)::
      a b c # source target target
      d e
 """
-__author__ = '\n'.join(['Aric Hagberg <hagberg@lanl.gov>',
-                        'Dan Schult <dschult@colgate.edu>',
-                        'Loïc Séguin-C. <loicseguin@gmail.com>'])
-#    Copyright (C) 2004-2018 by
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    All rights reserved.
-#    BSD license.
 
 __all__ = ['generate_adjlist',
            'write_adjlist',
            'parse_adjlist',
            'read_adjlist']
 
-from networkx.utils import make_str, open_file
+from networkx.utils import open_file
 import networkx as nx
 
 
@@ -77,15 +67,15 @@ def generate_adjlist(G, delimiter=' '):
     directed = G.is_directed()
     seen = set()
     for s, nbrs in G.adjacency():
-        line = make_str(s) + delimiter
+        line = str(s) + delimiter
         for t, data in nbrs.items():
             if not directed and t in seen:
                 continue
             if G.is_multigraph():
                 for d in data.values():
-                    line += make_str(t) + delimiter
+                    line += str(t) + delimiter
             else:
-                line += make_str(t) + delimiter
+                line += str(t) + delimiter
         if not directed:
             seen.add(s)
         yield line[:-len(delimiter)]
@@ -154,8 +144,8 @@ def parse_adjlist(lines, comments='#', delimiter=None,
     lines : list or iterator of strings
         Input data in adjlist format
 
-    create_using: NetworkX graph container
-       Use given NetworkX graph for holding nodes or edges.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+       Graph type to create. If graph instance, then cleared before populated.
 
     nodetype : Python type, optional
        Convert nodes to this type.
@@ -191,15 +181,7 @@ def parse_adjlist(lines, comments='#', delimiter=None,
     read_adjlist
 
     """
-    if create_using is None:
-        G = nx.Graph()
-    else:
-        try:
-            G = create_using
-            G.clear()
-        except:
-            raise TypeError("Input graph is not a NetworkX graph type")
-
+    G = nx.empty_graph(0, create_using)
     for line in lines:
         p = line.find(comments)
         if p >= 0:
@@ -218,7 +200,7 @@ def parse_adjlist(lines, comments='#', delimiter=None,
         G.add_node(u)
         if nodetype is not None:
             try:
-                vlist = map(nodetype, vlist)
+                vlist = list(map(nodetype, vlist))
             except:
                 raise TypeError("Failed to convert nodes ({}) to type {}"
                                 .format(','.join(vlist), nodetype))
@@ -237,8 +219,8 @@ def read_adjlist(path, comments="#", delimiter=None, create_using=None,
        Filename or file handle to read.
        Filenames ending in .gz or .bz2 will be uncompressed.
 
-    create_using: NetworkX graph container
-       Use given NetworkX graph for holding nodes or edges.
+    create_using : NetworkX graph constructor, optional (default=nx.Graph)
+       Graph type to create. If graph instance, then cleared before populated.
 
     nodetype : Python type, optional
        Convert nodes to this type.
@@ -282,11 +264,11 @@ def read_adjlist(path, comments="#", delimiter=None, create_using=None,
     Since nodes must be hashable, the function nodetype must return hashable
     types (e.g. int, float, str, frozenset - or tuples of those, etc.)
 
-    The optional create_using parameter is a NetworkX graph container.
-    The default is Graph(), an undirected graph.  To read the data as
-    a directed graph use
+    The optional create_using parameter indicates the type of NetworkX graph
+    created.  The default is `nx.Graph`, an undirected graph.
+    To read the data as a directed graph use
 
-    >>> G=nx.read_adjlist("test.adjlist", create_using=nx.DiGraph())
+    >>> G=nx.read_adjlist("test.adjlist", create_using=nx.DiGraph)
 
     Notes
     -----
@@ -302,12 +284,3 @@ def read_adjlist(path, comments="#", delimiter=None, create_using=None,
                          delimiter=delimiter,
                          create_using=create_using,
                          nodetype=nodetype)
-
-# fixture for nose tests
-
-
-def teardown_module(module):
-    import os
-    for fname in ['test.adjlist', 'test.adjlist.gz']:
-        if os.path.isfile(fname):
-            os.unlink(fname)
